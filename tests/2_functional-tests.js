@@ -14,8 +14,8 @@ suite('Functional Tests', function() {
     const boardId = 'general';
 
     suiteSetup(async () => {
-        // await Reply.deleteMany();
-        // await Thread.deleteMany();
+        await Reply.deleteMany();
+        await Thread.deleteMany();
     });
 
     beforeEach(async () => {
@@ -24,8 +24,15 @@ suite('Functional Tests', function() {
     });
 
     test('Creating a new thread: POST request to /api/threads/{board}', async () => {
-        const thread = await req.post('/api/threads/general').send({ text });
+        const text = 'Test Thread 1'
+        const res = await req.post('/api/threads/general').send({ text });
+        const thread = res.body;
         console.log(thread);
-        assert
+        assert.isTrue(true);
+    });
+
+    afterEach(async () => {
+        console.log('closing chai request');
+        req.close();
     });
 });

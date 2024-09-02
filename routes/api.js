@@ -8,7 +8,8 @@ module.exports = function (app) {
         .post(async (req, res) => {
             const board = req.params.board;
             const text = req.body.text;
-            const thread = await createThread(board, text);
+            const deletePassword = req.body.delete_password;
+            const thread = await createThread(board, text, deletePassword);
             res.json(thread);
         });
       

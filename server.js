@@ -9,6 +9,7 @@ const fccTestingRoutes  = require('./routes/fcctesting.js');
 const runner            = require('./test-runner');
 
 const DatabaseService   = require('./services/DatabaseService');
+DatabaseService.connect();
 
 const app = express();
 
