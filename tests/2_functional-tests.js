@@ -10,6 +10,9 @@ chai.use(chaiHttp);
 let req;
 
 suite('Functional Tests', function() {
+
+    const boardId = 'general';
+
     suiteSetup(async () => {
         // await Reply.deleteMany();
         // await Thread.deleteMany();
@@ -21,6 +24,8 @@ suite('Functional Tests', function() {
     });
 
     test('Creating a new thread: POST request to /api/threads/{board}', async () => {
-        assert.isTrue(true);
+        const thread = await req.post('/api/threads/general').send({ text });
+        console.log(thread);
+        assert
     });
 });
