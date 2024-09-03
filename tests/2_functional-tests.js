@@ -74,6 +74,8 @@ suite('Functional Tests', function() {
         const boardId = 'general';
         const res = await req.get(`/api/threads/${boardId}`);
         const threads = res.body;
+
+        console.log(JSON.stringify(threads));
         
         assert.isArray(threads);
         assert.equal(threads.length, 10);

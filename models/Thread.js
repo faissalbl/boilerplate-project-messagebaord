@@ -12,7 +12,10 @@ const schema = new mongoose.Schema({
             return this.created_on
         },
     },
-    board: String,
+    board: {
+        type: String,
+        index: true,
+    },
     replies: [ { type: mongoose.Schema.Types.ObjectId, ref: 'Reply' } ],
     replycount: { 
         type: Number,

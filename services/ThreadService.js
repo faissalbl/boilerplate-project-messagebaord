@@ -41,3 +41,21 @@ module.exports.createReply = async function(threadId, text, deletePassword) {
 
     return reply;
 }
+
+module.exports.getRecentThreadsAndReplies = async function(boardId) {
+    const threads = await Thread.find({ board: boardId })
+        .sort({ bumped_on: -1 })
+        .limit(10)
+        .populate({
+            path: 'replies',
+            options: {
+                sort: { created_on: -1 },
+                limit: 3,
+            },
+            select: '-reported -delete_password',
+        })
+        .select('-reported -delete_password')
+        .exec();
+
+    return threads;
+}

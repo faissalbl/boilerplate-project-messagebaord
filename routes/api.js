@@ -1,6 +1,6 @@
 'use strict';
 
-const { createThread, createReply } = require('../services/ThreadService');
+const { createThread, createReply, getRecentThreadsAndReplies } = require('../services/ThreadService');
 
 module.exports = function (app) {
   
@@ -11,6 +11,11 @@ module.exports = function (app) {
             const deletePassword = req.body.delete_password;
             const thread = await createThread(board, text, deletePassword);
             res.json(thread);
+        })
+        .get(async (req, res) => {
+            const board = req.params.board;
+            const threads = await getRecentThreadsAndReplies(board);
+            res.json(threads);
         });
       
     app.route('/api/replies/:board')
