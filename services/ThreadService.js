@@ -43,7 +43,7 @@ module.exports.createReply = async function(threadId, text, deletePassword) {
 }
 
 module.exports.getRecentThreadsAndReplies = async function(boardId) {
-    const threads = await Thread.find({ board: boardId })
+    let threads = await Thread.find({ board: boardId })
         .sort({ bumped_on: -1 })
         .limit(10)
         .populate({
@@ -56,6 +56,6 @@ module.exports.getRecentThreadsAndReplies = async function(boardId) {
         })
         .select('-reported -delete_password')
         .exec();
-
+ 
     return threads;
 }

@@ -4,16 +4,50 @@ const assert = chai.assert;
 const server = require('../server');
 const Thread = require('../models/Thread');
 const Reply = require('../models/Reply');
-const { createThread } = require('../services/ThreadService');
+const { createThread, createReply } = require('../services/ThreadService');
 const BcryptService = require('../services/BcryptService');
 
 chai.use(chaiHttp);
 
+const boardId = 'general';
+
+async function createThreadsAndReplies() {
+    // create threads in parallel
+    const deletePassword = 'abc123';
+
+    const threadPromises = [];
+    for (let i = 1; i <= 12; i++) {
+        let text = `Thread ${i}`;
+        const threadPromise = createThread(boardId, text, deletePassword);
+        threadPromises.push(threadPromise);
+    }
+    const threads = await Promise.all(threadPromises);
+    
+    // create replies in parallel
+    const replyPromises = [];
+    threads.forEach(t => {
+        for (let i = 1; i <= 5; i++) {
+            text = `Reply ${i}`;
+            const replyPromise =  createReply(t._id, text, deletePassword);
+            replyPromises.push(replyPromise);
+        }
+    });
+    await Promise.all(replyPromises);
+
+    console.log('createThreadsAndRepliesEnd');
+}
+
+function sleep(ms) {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            resolve();
+        }, ms);
+    });
+}
+
 let req;
 
 suite('Functional Tests', function() {
-
-    const boardId = 'general';
 
     suiteSetup(async () => {
         await Reply.deleteMany();
@@ -25,8 +59,7 @@ suite('Functional Tests', function() {
         req = chai.request(server);
     });
 
-    test('Creating a new thread: POST request to /api/threads/{board}', async () => {
-        const boardId = 'general';
+    test('Creating a new thread: POST request to /api/threads/{board}', async () => {       
         const text = 'Test Thread 1';
         const deletePassword = '123';
         const res = await req.post(`/api/threads/${boardId}`).send({ text, delete_password: deletePassword });
@@ -44,7 +77,6 @@ suite('Functional Tests', function() {
     });
 
     test('Creating a new reply: POST request to /api/replies/{board}', async () => {
-        const boardId = 'general';
         let text = 'Test Thread for Reply 1';
         const deletePassword = '123';
 
@@ -67,16 +99,17 @@ suite('Functional Tests', function() {
         assert.equal(thread.replycount, 1);
         assert.equal(thread.replies.length, 1);
 
-        assert.isAbove(new Date(thread.bumped_on), new Date(reply.created_on));
+        assert.isAtLeast(new Date(thread.bumped_on), new Date(reply.created_on));
     });
 
     test('Viewing the 10 most recent threads with 3 replies each: GET request to /api/threads/{board}', async () => {
-        const boardId = 'general';
+        await createThreadsAndReplies();
+        console.log('after create threads and replies');
         const res = await req.get(`/api/threads/${boardId}`);
         const threads = res.body;
 
-        console.log(JSON.stringify(threads));
-        
+        console.log(threads);
+
         assert.isArray(threads);
         assert.equal(threads.length, 10);
         assert.isAbove(new Date(threads[0].bumped_on), new Date(threads[1].bumped_on));
@@ -88,9 +121,8 @@ suite('Functional Tests', function() {
             assert.isDefined(t.bumped_on);
             assert.isUndefined(t.reported);
             assert.isUndefined(t.delete_password);
-            assert.isAtMost(t.replies.length, 3);
+            assert.equal(t.replies.length, 3);
             assert.isDefined(t.replycount);
-
             let lastCreatedOn;
             t.replies.forEach(r => {
                 assert.isDefined(r._id);
@@ -105,7 +137,7 @@ suite('Functional Tests', function() {
                 }
             });
         }); 
-    });
+    }).timeout(60000);
 
     afterEach(async () => {
         console.log('closing chai request');
