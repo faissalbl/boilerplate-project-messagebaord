@@ -4,6 +4,7 @@ const assert = chai.assert;
 const server = require('../server');
 const Thread = require('../models/Thread');
 const Reply = require('../models/Reply');
+const { createThread } = require('../services/ThreadService');
 const BcryptService = require('../services/BcryptService');
 
 chai.use(chaiHttp);
@@ -25,9 +26,10 @@ suite('Functional Tests', function() {
     });
 
     test('Creating a new thread: POST request to /api/threads/{board}', async () => {
-        const text = 'Test Thread 1'
+        const boardId = 'general';
+        const text = 'Test Thread 1';
         const deletePassword = '123';
-        const res = await req.post('/api/threads/general').send({ text, delete_password: deletePassword });
+        const res = await req.post(`/api/threads/${boardId}`).send({ text, delete_password: deletePassword });
         const thread = res.body;
         
         assert.isDefined(thread);
@@ -39,6 +41,33 @@ suite('Functional Tests', function() {
         assert.isFalse(thread.reported);
         assert.isTrue(await BcryptService.compare(deletePassword, thread.delete_password));
         assert.isEmpty(thread.replies);
+    });
+
+    test('Creating a new reply: POST request to /api/replies/{board}', async () => {
+        const boardId = 'general';
+        let text = 'Test Thread for Reply 1';
+        const deletePassword = '123';
+
+        let thread = await createThread(boardId, text, deletePassword);
+
+        const threadId = thread._id;
+        text = 'Test Reply 1';
+        const res = await req.post(`/api/replies/${boardId}`).send({ thread_id: threadId, text, delete_password: deletePassword });
+        const reply = res.body;
+
+        thread = await Thread.findById(threadId);
+
+        assert.isDefined(reply);
+        assert.isDefined(reply._id);
+        assert.isString(reply.text);
+        assert.isDefined(reply.created_on);
+        assert.isFalse(reply.reported);
+        assert.isTrue(await BcryptService.compare(deletePassword, reply.delete_password));
+
+        assert.equal(thread.replycount, 1);
+        assert.equal(thread.replies.length, 1);
+
+        assert.isAbove(new Date(thread.bumped_on), new Date(reply.created_on));
     });
 
     afterEach(async () => {

@@ -1,6 +1,6 @@
 'use strict';
 
-const { createThread } = require('../services/ThreadService');
+const { createThread, createReply } = require('../services/ThreadService');
 
 module.exports = function (app) {
   
@@ -13,6 +13,11 @@ module.exports = function (app) {
             res.json(thread);
         });
       
-    app.route('/api/replies/:board');
+    app.route('/api/replies/:board')
+        .post(async (req, res) => {
+            const { thread_id: threadId, text, delete_password: deletePassword } = req.body;
+            const reply = await createReply(threadId, text, deletePassword);
+            res.json(reply);
+        });
 
 };
