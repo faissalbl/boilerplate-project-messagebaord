@@ -70,6 +70,41 @@ suite('Functional Tests', function() {
         assert.isAbove(new Date(thread.bumped_on), new Date(reply.created_on));
     });
 
+    test('Viewing the 10 most recent threads with 3 replies each: GET request to /api/threads/{board}', async () => {
+        const boardId = 'general';
+        const res = await req.get(`/api/threads/${boardId}`);
+        const threads = res.body;
+        
+        assert.isArray(threads);
+        assert.equal(threads.length, 10);
+        assert.isAbove(new Date(threads[0].bumped_on), new Date(threads[1].bumped_on));
+        assert.isAbove(new Date(threads[8].bumped_on), new Date(threads[9].bumped_on));
+        threads.forEach(t => {
+            assert.isDefined(t._id);
+            assert.isString(t.text);
+            assert.isDefined(t.created_on);
+            assert.isDefined(t.bumped_on);
+            assert.isUndefined(t.reported);
+            assert.isUndefined(t.delete_password);
+            assert.isAtMost(t.replies.length, 3);
+            assert.isDefined(t.replycount);
+
+            let lastCreatedOn;
+            t.replies.forEach(r => {
+                assert.isDefined(r._id);
+                assert.isString(r.text);
+                assert.isDefined(r.created_on);
+                assert.isUndefined(r.reported);
+                assert.isUndefined(r.delete_password);
+        
+                if (!lastCreatedOn) lastCreatedOn = r.created_on;
+                else {
+                    assert.isBelow(new Date(r.created_on), new Date(lastCreatedOn));
+                }
+            });
+        }); 
+    });
+
     afterEach(async () => {
         console.log('closing chai request');
         req.close();
