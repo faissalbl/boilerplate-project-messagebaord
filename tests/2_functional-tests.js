@@ -4,6 +4,7 @@ const assert = chai.assert;
 const server = require('../server');
 const Thread = require('../models/Thread');
 const Reply = require('../models/Reply');
+const BcryptService = require('../services/BcryptService');
 
 chai.use(chaiHttp);
 
@@ -25,10 +26,19 @@ suite('Functional Tests', function() {
 
     test('Creating a new thread: POST request to /api/threads/{board}', async () => {
         const text = 'Test Thread 1'
-        const res = await req.post('/api/threads/general').send({ text });
+        const deletePassword = '123';
+        const res = await req.post('/api/threads/general').send({ text, delete_password: deletePassword });
         const thread = res.body;
-        console.log(thread);
-        assert.isTrue(true);
+        
+        assert.isDefined(thread);
+        assert.isDefined(thread._id);
+        assert.isString(thread.text);
+        assert.isDefined(thread.created_on);
+        assert.isDefined(thread.bumped_on);
+        assert.equal(thread.created_on, thread.bumped_on);
+        assert.isFalse(thread.reported);
+        assert.isTrue(await BcryptService.compare(deletePassword, thread.delete_password));
+        assert.isEmpty(thread.replies);
     });
 
     afterEach(async () => {
