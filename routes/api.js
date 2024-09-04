@@ -61,10 +61,11 @@ module.exports = function (app) {
             res.json(reply);
         })
         .delete(async (req, res) => {
+            const threadId = req.body.thread_id;
             const replyId = req.body.reply_id;
             const deletePassword = req.body.delete_password;
             try {
-                await deleteReply(replyId, deletePassword);
+                await deleteReply(threadId, replyId, deletePassword);
             } catch(err) {
                 if (err instanceof InvalidPasswordError) {
                     return res.end(err.message);
@@ -75,8 +76,9 @@ module.exports = function (app) {
             res.end('success');
         })
         .put(async (req, res) => {
+            const threadId = req.body.thread_id;
             const replyId = req.body.reply_id;
-            await reportReply(replyId);
+            await reportReply(threadId, replyId);
             res.end('reported');
         });
 

@@ -3,7 +3,6 @@ const chai = require('chai');
 const assert = chai.assert;
 const server = require('../server');
 const Thread = require('../models/Thread');
-const Reply = require('../models/Reply');
 const { createThread, createReply } = require('../services/ThreadService');
 const BcryptService = require('../services/BcryptService');
 
@@ -15,34 +14,22 @@ async function createThreadsAndReplies() {
     // create threads in parallel
     const deletePassword = 'abc123';
 
+    const replies = [];
+    for (let i = 1; i <= 5; i++) {
+        text = `Reply ${i}`;
+        replies.push({
+            text, 
+            delete_password: deletePassword
+        });
+    }
+
     const threadPromises = [];
     for (let i = 1; i <= 12; i++) {
         let text = `Thread ${i}`;
-        const threadPromise = createThread(boardId, text, deletePassword);
+        const threadPromise = createThread(boardId, text, deletePassword, replies);
         threadPromises.push(threadPromise);
     }
-    const threads = await Promise.all(threadPromises);
-    
-    // create replies in parallel
-    const replyPromises = [];
-    threads.forEach(t => {
-        for (let i = 1; i <= 5; i++) {
-            text = `Reply ${i}`;
-            const replyPromise =  createReply(t._id, text, deletePassword);
-            replyPromises.push(replyPromise);
-        }
-    });
-    await Promise.all(replyPromises);
-
-    console.log('createThreadsAndRepliesEnd');
-}
-
-function sleep(ms) {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            resolve();
-        }, ms);
-    });
+    await Promise.all(threadPromises);
 }
 
 let req;
@@ -50,7 +37,6 @@ let req;
 suite('Functional Tests', function() {
 
     suiteSetup(async () => {
-        await Reply.deleteMany();
         await Thread.deleteMany();
     });
 
@@ -99,12 +85,11 @@ suite('Functional Tests', function() {
         assert.equal(thread.replycount, 1);
         assert.equal(thread.replies.length, 1);
 
-        assert.isAtLeast(new Date(thread.bumped_on), new Date(reply.created_on));
+        assert.isAbove(new Date(reply.created_on), new Date(thread.bumped_on));
     });
 
     test('Viewing the 10 most recent threads with 3 replies each: GET request to /api/threads/{board}', async () => {
         await createThreadsAndReplies();
-        console.log('after create threads and replies');
         const res = await req.get(`/api/threads/${boardId}`);
         const threads = res.body;
 
@@ -131,11 +116,11 @@ suite('Functional Tests', function() {
         
                 if (!lastCreatedOn) lastCreatedOn = r.created_on;
                 else {
-                    assert.isBelow(new Date(r.created_on), new Date(lastCreatedOn));
+                    assert.isAtMost(new Date(r.created_on), new Date(lastCreatedOn));
                 }
             });
         }); 
-    }).timeout(10000);
+    });
 
     test('Deleting a thread with the incorrect password: DELETE request to /api/threads/{board} with an invalid delete_password', async () => {
         const deletePassword = '123';
@@ -144,11 +129,8 @@ suite('Functional Tests', function() {
         const res = await req.delete(`/api/threads/${boardId}`).send({ thread_id: thread._id, delete_password: '456' });        
         assert.equal(res.text, 'incorrect password');
 
-        const persistedThread = await Thread.findById(thread._id, [ '_id' ]);
+        const persistedThread = await Thread.findById(thread._id, [ '_id', 'replies' ]);
         assert.isNotNull(persistedThread);
-
-        const persistedReply = await Reply.findById(reply._id, [ '_id' ]);
-        assert.isNotNull(persistedReply);
     });
 
     test('Deleting a thread with the correct password: DELETE request to /api/threads/{board} with a valid delete_password', async () => {
@@ -160,9 +142,6 @@ suite('Functional Tests', function() {
 
         const persistedThread = await Thread.findById(thread._id, [ '_id' ]);
         assert.isNull(persistedThread);
-
-        const persistedReply = await Reply.findById(reply._id, [ '_id' ]);
-        assert.isNull(persistedReply);
     });
 
     test('Reporting a thread: PUT request to /api/threads/{board}', async () => {
@@ -209,36 +188,41 @@ suite('Functional Tests', function() {
 
     test('Deleting a reply with the incorrect password: DELETE request to /api/replies/{board} with an invalid delete_password', async () => {
         const deletePassword = '123';
-        const thread = await createThread(boardId, 'Thread 1', deletePassword);
+        let thread = await createThread(boardId, 'Thread 1', deletePassword);
         const reply = await createReply(thread._id, 'Reply 1', deletePassword);
         const res = await req.delete(`/api/replies/${boardId}`).send({ thread_id: thread._id, reply_id: reply._id, delete_password: '456' });        
         assert.equal(res.text, 'incorrect password');
 
-        const persistedReply = await Reply.findById(reply._id, [ '_id', 'text' ]);
+        thread = await Thread.findById(thread._id, [ '_id', 'replies' ]);
+
+        const persistedReply = thread.replies.find(r => r._id.toString() === reply._id.toString());
         assert.isNotNull(persistedReply);
         assert.equal(persistedReply.text, 'Reply 1');
     });
 
     test('Deleting a reply with the correct password: DELETE request to /api/replies/{board} with a valid delete_password', async () => {
         const deletePassword = '123';
-        const thread = await createThread(boardId, 'Thread 1', deletePassword);
+        let thread = await createThread(boardId, 'Thread 1', deletePassword);
         const reply = await createReply(thread._id, 'Reply 1', deletePassword);
         const res = await req.delete(`/api/replies/${boardId}`).send({ thread_id: thread._id, reply_id: reply._id, delete_password: deletePassword });        
         assert.equal(res.text, 'success');
 
-        const persistedReply = await Reply.findById(reply._id, [ '_id', 'text' ]);
+        thread = await Thread.findById(thread._id, [ '_id', 'replies' ]);
+
+        const persistedReply = thread.replies.find(r => r._id.toString() === reply._id.toString());
         assert.isNotNull(persistedReply);
         assert.equal(persistedReply.text, '[deleted]');
     });
 
     test('Reporting a reply: PUT request to /api/replies/{board}', async () => {
         const deletePassword = '123';
-        const thread = await createThread(boardId, 'Thread 5', deletePassword);
+        let thread = await createThread(boardId, 'Thread 5', deletePassword);
         let reply = await createReply(thread._id, 'Reply 1', deletePassword);
         const res = await req.put(`/api/replies/${boardId}`).send({ thread_id: thread._id, reply_id: reply._id });        
         
-        reply = await Reply.findById(reply._id, ['_id', 'reported']);
+        thread = await Thread.findById(thread._id, [ '_id', 'replies' ]);
 
+        reply = thread.replies.find(r => r._id.toString() === reply._id.toString());
         assert.equal(res.text, 'reported');
         assert.isTrue(reply.reported);
     });
@@ -249,7 +233,6 @@ suite('Functional Tests', function() {
     });
 
     suiteTeardown(async () => {
-        await Reply.deleteMany();
         await Thread.deleteMany();
     });
 });

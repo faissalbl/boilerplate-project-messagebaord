@@ -1,6 +1,19 @@
 const mongoose = require('mongoose');
 
-const schema = new mongoose.Schema({
+const replySchema = new mongoose.Schema({
+    text: String,
+    created_on: {
+        type: Date,
+        default: () => new Date(),
+    },
+    delete_password: String,
+    reported: {
+        type: Boolean,
+        default: false,
+    }
+});
+
+const threadSchema = new mongoose.Schema({
     text: String,
     created_on: {
         type: Date,
@@ -16,7 +29,7 @@ const schema = new mongoose.Schema({
         type: String,
         index: true,
     },
-    replies: [ { type: mongoose.Schema.Types.ObjectId, ref: 'Reply' } ],
+    replies: [replySchema],
     replycount: { 
         type: Number,
         default: 0,
@@ -28,6 +41,6 @@ const schema = new mongoose.Schema({
     delete_password: String,
 });
 
-const Thread = mongoose.model('Thread', schema);
+const Thread = mongoose.model('Thread', threadSchema);
 
 module.exports = Thread;
