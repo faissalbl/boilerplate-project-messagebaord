@@ -53,6 +53,8 @@ module.exports.getRecentThreadsAndReplies = async function(boardId) {
             options: {
                 sort: { created_on: -1 },
                 //limit: 3,
+                //perDocumentLimit: 3, <<<<<---- this would be the correct property
+                // but it generated one populate query per document, which is not desirable as performance is bad.
             },
             select: '-reported -delete_password',
         })
@@ -68,6 +70,12 @@ module.exports.getRecentThreadsAndReplies = async function(boardId) {
     });
 
     return threadsTrimmedReplies;
+}
+
+module.exports.getThread = async function(threadId) {
+    const thread = await Thread.findById(threadId, ['-reported', '-delete_password']);
+    await thread.populate({ path: 'replies', select: '-reported -delete_password' });
+    return thread;
 }
 
 module.exports.deleteThread = async function(threadId, deletePassword) {

@@ -135,7 +135,7 @@ suite('Functional Tests', function() {
                 }
             });
         }); 
-    }).timeout(60000);
+    }).timeout(10000);
 
     test('Deleting a thread with the incorrect password: DELETE request to /api/threads/{board} with an invalid delete_password', async () => {
         const deletePassword = '123';
@@ -174,6 +174,38 @@ suite('Functional Tests', function() {
         assert.equal(res.text, 'reported');
         assert.isTrue(thread.reported);
     });
+    
+    test('Viewing a single thread with all replies: GET request to /api/replies/{board}', async () => {
+        const deletePassword = '123';
+        let thread = await createThread(boardId, 'Thread 7', deletePassword);
+        const reply1 = createReply(thread._id, 'Reply 1', deletePassword);
+        const reply2 = createReply(thread._id, 'Reply 2', deletePassword);
+        const reply3 = createReply(thread._id, 'Reply 3', deletePassword);
+        const reply4 = createReply(thread._id, 'Reply 4', deletePassword);
+        const reply5 = createReply(thread._id, 'Reply 5', deletePassword);
+
+        await Promise.all([reply1, reply2, reply3, reply4, reply5]);
+
+        const res = await req.get(`/api/threads/${boardId}?thread_id=${thread._id}`);
+        thread = res.body;
+
+        assert.isDefined(thread._id);
+        assert.isString(thread.text);
+        assert.isDefined(thread.created_on);
+        assert.isDefined(thread.bumped_on);
+        assert.isUndefined(thread.reported);
+        assert.isUndefined(thread.delete_password);
+        assert.equal(thread.replies.length, 5);
+        assert.equal(thread.replycount, 5);
+        let lastCreatedOn;
+        thread.replies.forEach(r => {
+            assert.isDefined(r._id);
+            assert.isString(r.text);
+            assert.isDefined(r.created_on);
+            assert.isUndefined(r.reported);
+            assert.isUndefined(r.delete_password);
+        });
+    })
 
     afterEach(async () => {
         console.log('closing chai request');

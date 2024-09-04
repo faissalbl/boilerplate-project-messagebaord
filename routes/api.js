@@ -6,6 +6,7 @@ const {
     getRecentThreadsAndReplies, 
     deleteThread,
     reportThread,
+    getThread,
 } = require('../services/ThreadService');
 
 const InvalidPasswordError = require('../errors/InvalidPasswordError');
@@ -22,8 +23,14 @@ module.exports = function (app) {
         })
         .get(async (req, res) => {
             const board = req.params.board;
-            const threads = await getRecentThreadsAndReplies(board);
-            res.json(threads);
+            const threadId = req.query.thread_id;
+            let result;
+            if (threadId !== undefined) {
+                result = await getThread(threadId);
+            } else {
+                result = await getRecentThreadsAndReplies(board);
+            }
+            res.json(result);
         })
         .delete(async (req, res) => {
             const threadId = req.body.thread_id;
