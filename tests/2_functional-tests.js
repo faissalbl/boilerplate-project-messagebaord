@@ -165,6 +165,16 @@ suite('Functional Tests', function() {
         assert.isNull(persistedReply);
     });
 
+    test('Reporting a thread: PUT request to /api/threads/{board}', async () => {
+        let thread = await createThread(boardId, 'Thread 5', '123');
+        const res = await req.put(`/api/threads/${boardId}`).send({ thread_id: thread._id });        
+        
+        thread = await Thread.findById(thread._id, ['_id', 'reported']);
+
+        assert.equal(res.text, 'reported');
+        assert.isTrue(thread.reported);
+    });
+
     afterEach(async () => {
         console.log('closing chai request');
         req.close();

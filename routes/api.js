@@ -5,6 +5,7 @@ const {
     createReply, 
     getRecentThreadsAndReplies, 
     deleteThread,
+    reportThread,
 } = require('../services/ThreadService');
 
 const InvalidPasswordError = require('../errors/InvalidPasswordError');
@@ -37,6 +38,11 @@ module.exports = function (app) {
                 }
             }
             res.end('success');
+        })
+        .put(async (req, res) => {
+            const threadId = req.body.thread_id;
+            await reportThread(threadId);
+            res.end('reported');
         });
       
     app.route('/api/replies/:board')

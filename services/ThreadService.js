@@ -78,3 +78,6 @@ module.exports.deleteThread = async function(threadId, deletePassword) {
     await Reply.deleteMany({ thread_id: threadId });
 }
 
+module.exports.reportThread = async function(threadId) {
+    await Thread.findByIdAndUpdate(threadId, { reported: true }, { useFindAndModify: false });
+}
