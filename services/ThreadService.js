@@ -75,5 +75,6 @@ module.exports.deleteThread = async function(threadId, deletePassword) {
     const validPassword = await BcryptService.compare(deletePassword, thread.delete_password);
     if (!validPassword) throw new InvalidPasswordError('invalid password');
     await Thread.findByIdAndDelete(thread._id);
+    await Reply.deleteMany({ thread_id: threadId });
 }
 

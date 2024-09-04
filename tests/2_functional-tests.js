@@ -145,13 +145,25 @@ suite('Functional Tests', function() {
         assert.equal(res.text, 'invalid password');
 
         const persistedThread = await Thread.findById(thread._id, [ '_id' ]);
-        assert.isDefined(persistedThread);
+        assert.isNotNull(persistedThread);
 
         const persistedReply = await Reply.findById(reply._id, [ '_id' ]);
-        assert.isDefined(persistedReply);
+        assert.isNotNull(persistedReply);
     });
 
-    // Deleting a thread with the correct password: DELETE request to /api/threads/{board} with a valid delete_password
+    test('Deleting a thread with the correct password: DELETE request to /api/threads/{board} with a valid delete_password', async () => {
+        const deletePassword = '123';
+        const thread = await createThread(boardId, 'Thread 1', deletePassword);
+        const reply = await createReply(thread._id, 'Reply 1', deletePassword);
+        const res = await req.delete(`/api/threads/${boardId}`).send({ thread_id: thread._id, delete_password: deletePassword });        
+        assert.equal(res.text, 'success');
+
+        const persistedThread = await Thread.findById(thread._id, [ '_id' ]);
+        assert.isNull(persistedThread);
+
+        const persistedReply = await Reply.findById(reply._id, [ '_id' ]);
+        assert.isNull(persistedReply);
+    });
 
     afterEach(async () => {
         console.log('closing chai request');
