@@ -1,5 +1,6 @@
 const Thread = require('../models/Thread');
 const Reply = require('../models/Reply');
+const InvalidPasswordError = require('../errors/InvalidPasswordError');
 
 const BcryptService = require('./BcryptService');
 
@@ -67,5 +68,12 @@ module.exports.getRecentThreadsAndReplies = async function(boardId) {
     });
 
     return threadsTrimmedReplies;
+}
+
+module.exports.deleteThread = async function(threadId, deletePassword) {
+    const thread = await Thread.findById(threadId, ['_id', 'delete_password']);
+    const validPassword = await BcryptService.compare(deletePassword, thread.delete_password);
+    if (!validPassword) throw new InvalidPasswordError('invalid password');
+    await Thread.findByIdAndDelete(thread._id);
 }
 

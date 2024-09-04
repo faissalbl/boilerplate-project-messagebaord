@@ -1,6 +1,13 @@
 'use strict';
 
-const { createThread, createReply, getRecentThreadsAndReplies } = require('../services/ThreadService');
+const { 
+    createThread, 
+    createReply, 
+    getRecentThreadsAndReplies, 
+    deleteThread,
+} = require('../services/ThreadService');
+
+const InvalidPasswordError = require('../errors/InvalidPasswordError');
 
 module.exports = function (app) {
   
@@ -16,6 +23,20 @@ module.exports = function (app) {
             const board = req.params.board;
             const threads = await getRecentThreadsAndReplies(board);
             res.json(threads);
+        })
+        .delete(async (req, res) => {
+            const threadId = req.body.thread_id;
+            const deletePassword = req.body.delete_password;
+            try {
+                await deleteThread(threadId, deletePassword);
+            } catch(err) {
+                if (err instanceof InvalidPasswordError) {
+                    return res.end(err.message);
+                } else {
+                    throw err;
+                }
+            }
+            res.end('success');
         });
       
     app.route('/api/replies/:board')

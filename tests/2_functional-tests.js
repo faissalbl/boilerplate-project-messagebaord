@@ -137,6 +137,17 @@ suite('Functional Tests', function() {
         }); 
     }).timeout(60000);
 
+    test('Deleting a thread with the incorrect password: DELETE request to /api/threads/{board} with an invalid delete_password', async () => {
+        const deletePassword = '123';
+        const thread = await Thread.create({ text: 't 1', delete_password: deletePassword });
+        const res = await req.delete(`/api/threads/${boardId}`).send({ thread_id: thread._id, delete_password: deletePassword });        
+        assert.equal(res.text, 'invalid password');
+
+        const persistedThread = await Thread.findById(thread._id, [ '_id' ]);
+        console.log('persistedThread', persistedThread);
+        assert.isDefined(persistedThread);
+    });
+
     afterEach(async () => {
         console.log('closing chai request');
         req.close();
