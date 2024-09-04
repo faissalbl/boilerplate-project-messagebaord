@@ -96,3 +96,7 @@ module.exports.deleteReply = async function(replyId, deletePassword) {
 module.exports.reportThread = async function(threadId) {
     await Thread.findByIdAndUpdate(threadId, { reported: true }, { useFindAndModify: false });
 }
+
+module.exports.reportReply = async function(replyId) {
+    await Reply.findByIdAndUpdate(replyId, { reported: true }, { useFindAndModify: false });
+}

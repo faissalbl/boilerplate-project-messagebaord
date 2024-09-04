@@ -231,6 +231,18 @@ suite('Functional Tests', function() {
         assert.equal(persistedReply.text, '[deleted]');
     });
 
+    test('Reporting a reply: PUT request to /api/replies/{board}', async () => {
+        const deletePassword = '123';
+        const thread = await createThread(boardId, 'Thread 5', deletePassword);
+        let reply = await createReply(thread._id, 'Reply 1', deletePassword);
+        const res = await req.put(`/api/replies/${boardId}`).send({ thread_id: thread._id, reply_id: reply._id });        
+        
+        reply = await Reply.findById(reply._id, ['_id', 'reported']);
+
+        assert.equal(res.text, 'reported');
+        assert.isTrue(reply.reported);
+    });
+    
     afterEach(async () => {
         console.log('closing chai request');
         req.close();

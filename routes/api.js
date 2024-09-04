@@ -8,6 +8,7 @@ const {
     reportThread,
     getThread,
     deleteReply,
+    reportReply,
 } = require('../services/ThreadService');
 
 const InvalidPasswordError = require('../errors/InvalidPasswordError');
@@ -72,6 +73,11 @@ module.exports = function (app) {
                 }
             }
             res.end('success');
+        })
+        .put(async (req, res) => {
+            const replyId = req.body.reply_id;
+            await reportReply(replyId);
+            res.end('reported');
         });
 
 };
