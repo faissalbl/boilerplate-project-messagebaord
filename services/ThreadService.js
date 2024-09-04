@@ -81,7 +81,7 @@ module.exports.getThread = async function(threadId) {
 module.exports.deleteThread = async function(threadId, deletePassword) {
     const thread = await Thread.findById(threadId, ['_id', 'delete_password']);
     const validPassword = await BcryptService.compare(deletePassword, thread.delete_password);
-    if (!validPassword) throw new InvalidPasswordError('invalid password');
+    if (!validPassword) throw new InvalidPasswordError();
     await Thread.findByIdAndDelete(thread._id);
     await Reply.deleteMany({ thread_id: threadId });
 }
@@ -89,7 +89,7 @@ module.exports.deleteThread = async function(threadId, deletePassword) {
 module.exports.deleteReply = async function(replyId, deletePassword) {
     const reply = await Reply.findById(replyId, ['_id', 'delete_password']);
     const validPassword = await BcryptService.compare(deletePassword, reply.delete_password);
-    if (!validPassword) throw new InvalidPasswordError('invalid password');
+    if (!validPassword) throw new InvalidPasswordError();
     await Reply.findByIdAndUpdate(replyId, { text: '[deleted]' }, { useFindAndModify: false })
 }
 

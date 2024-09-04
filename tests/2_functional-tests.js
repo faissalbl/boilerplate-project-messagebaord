@@ -142,7 +142,7 @@ suite('Functional Tests', function() {
         const thread = await createThread(boardId, 'Thread 1', deletePassword);
         const reply = await createReply(thread._id, 'Reply 1', deletePassword);
         const res = await req.delete(`/api/threads/${boardId}`).send({ thread_id: thread._id, delete_password: '456' });        
-        assert.equal(res.text, 'invalid password');
+        assert.equal(res.text, 'incorrect password');
 
         const persistedThread = await Thread.findById(thread._id, [ '_id' ]);
         assert.isNotNull(persistedThread);
@@ -212,7 +212,7 @@ suite('Functional Tests', function() {
         const thread = await createThread(boardId, 'Thread 1', deletePassword);
         const reply = await createReply(thread._id, 'Reply 1', deletePassword);
         const res = await req.delete(`/api/replies/${boardId}`).send({ thread_id: thread._id, reply_id: reply._id, delete_password: '456' });        
-        assert.equal(res.text, 'invalid password');
+        assert.equal(res.text, 'incorrect password');
 
         const persistedReply = await Reply.findById(reply._id, [ '_id', 'text' ]);
         assert.isNotNull(persistedReply);
@@ -246,5 +246,10 @@ suite('Functional Tests', function() {
     afterEach(async () => {
         console.log('closing chai request');
         req.close();
+    });
+
+    suiteTeardown(async () => {
+        await Reply.deleteMany();
+        await Thread.deleteMany();
     });
 });
