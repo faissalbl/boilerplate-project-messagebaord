@@ -108,8 +108,6 @@ suite('Functional Tests', function() {
         const res = await req.get(`/api/threads/${boardId}`);
         const threads = res.body;
 
-        console.log(threads);
-
         assert.isArray(threads);
         assert.equal(threads.length, 10);
         assert.isAbove(new Date(threads[0].bumped_on), new Date(threads[1].bumped_on));

@@ -27,6 +27,7 @@ module.exports.createReply = async function(threadId, text, deletePassword) {
     const deletePasswordHash = await hash(deletePassword);
 
     let reply = new Reply({
+        thread_id: threadId,
         text,
         delete_password: deletePasswordHash,
     });
@@ -43,19 +44,28 @@ module.exports.createReply = async function(threadId, text, deletePassword) {
 }
 
 module.exports.getRecentThreadsAndReplies = async function(boardId) {
-    let threads = await Thread.find({ board: boardId })
+    const threads = await Thread.find({ board: boardId })
         .sort({ bumped_on: -1 })
         .limit(10)
         .populate({
             path: 'replies',
             options: {
                 sort: { created_on: -1 },
-                limit: 3,
+                //limit: 3,
             },
             select: '-reported -delete_password',
         })
         .select('-reported -delete_password')
-        .exec();
- 
-    return threads;
+    
+    // as the limit option is not working for the subdocuments, then manually trim them.
+    const threadsTrimmedReplies = [];
+    threads.forEach(t => {
+        threadsTrimmedReplies.push({
+            ...t._doc,
+            replies: t._doc.replies.slice(0, 3),
+        });
+    });
+
+    return threadsTrimmedReplies;
 }
+

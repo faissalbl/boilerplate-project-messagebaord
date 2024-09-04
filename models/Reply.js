@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
 const schema = new mongoose.Schema({
+    thread_id: {
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'Thread',
+        index: true
+    },
     text: String,
     created_on: {
         type: Date,
