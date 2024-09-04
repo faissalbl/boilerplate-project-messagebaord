@@ -7,6 +7,7 @@ const {
     deleteThread,
     reportThread,
     getThread,
+    deleteReply,
 } = require('../services/ThreadService');
 
 const InvalidPasswordError = require('../errors/InvalidPasswordError');
@@ -57,6 +58,20 @@ module.exports = function (app) {
             const { thread_id: threadId, text, delete_password: deletePassword } = req.body;
             const reply = await createReply(threadId, text, deletePassword);
             res.json(reply);
+        })
+        .delete(async (req, res) => {
+            const replyId = req.body.reply_id;
+            const deletePassword = req.body.delete_password;
+            try {
+                await deleteReply(replyId, deletePassword);
+            } catch(err) {
+                if (err instanceof InvalidPasswordError) {
+                    return res.end(err.message);
+                } else {
+                    throw err;
+                }
+            }
+            res.end('success');
         });
 
 };

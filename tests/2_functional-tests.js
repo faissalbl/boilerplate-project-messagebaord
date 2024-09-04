@@ -205,7 +205,31 @@ suite('Functional Tests', function() {
             assert.isUndefined(r.reported);
             assert.isUndefined(r.delete_password);
         });
-    })
+    });
+
+    test('Deleting a reply with the incorrect password: DELETE request to /api/replies/{board} with an invalid delete_password', async () => {
+        const deletePassword = '123';
+        const thread = await createThread(boardId, 'Thread 1', deletePassword);
+        const reply = await createReply(thread._id, 'Reply 1', deletePassword);
+        const res = await req.delete(`/api/replies/${boardId}`).send({ thread_id: thread._id, reply_id: reply._id, delete_password: '456' });        
+        assert.equal(res.text, 'invalid password');
+
+        const persistedReply = await Reply.findById(reply._id, [ '_id', 'text' ]);
+        assert.isNotNull(persistedReply);
+        assert.equal(persistedReply.text, 'Reply 1');
+    });
+
+    test('Deleting a reply with the correct password: DELETE request to /api/replies/{board} with a valid delete_password', async () => {
+        const deletePassword = '123';
+        const thread = await createThread(boardId, 'Thread 1', deletePassword);
+        const reply = await createReply(thread._id, 'Reply 1', deletePassword);
+        const res = await req.delete(`/api/replies/${boardId}`).send({ thread_id: thread._id, reply_id: reply._id, delete_password: deletePassword });        
+        assert.equal(res.text, 'success');
+
+        const persistedReply = await Reply.findById(reply._id, [ '_id', 'text' ]);
+        assert.isNotNull(persistedReply);
+        assert.equal(persistedReply.text, '[deleted]');
+    });
 
     afterEach(async () => {
         console.log('closing chai request');
