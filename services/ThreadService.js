@@ -28,16 +28,22 @@ module.exports.createThread = async function(boardId, text, deletePassword, repl
 module.exports.createReply = async function(threadId, text, deletePassword) {
     const deletePasswordHash = await hash(deletePassword);
 
+    const replyCreatedOn = new Date();
+
     let reply = {
         thread_id: threadId,
         text,
         delete_password: deletePasswordHash,
+        created_on: replyCreatedOn,
     };
 
-    const thread = await Thread.findByIdAndUpdate(threadId, { 
-        $push: { replies: reply },
-        $inc: { replycount: 1 },
-        bumped_on: new Date()},
+    const thread = await Thread.findByIdAndUpdate(
+        threadId, 
+        { 
+            $push: { replies: reply },
+            $inc: { replycount: 1 },
+            bumped_on: replyCreatedOn,
+        },
         { new: true, useFindAndModify: false });
 
     // updated reply with _id

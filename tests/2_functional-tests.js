@@ -85,7 +85,7 @@ suite('Functional Tests', function() {
         assert.equal(thread.replycount, 1);
         assert.equal(thread.replies.length, 1);
 
-        assert.isAbove(new Date(reply.created_on), new Date(thread.bumped_on));
+        assert.equal(new Date(reply.created_on).getTime(), new Date(thread.bumped_on).getTime());
     });
 
     test('Viewing the 10 most recent threads with 3 replies each: GET request to /api/threads/{board}', async () => {
@@ -165,7 +165,7 @@ suite('Functional Tests', function() {
 
         await Promise.all([reply1, reply2, reply3, reply4, reply5]);
 
-        const res = await req.get(`/api/threads/${boardId}?thread_id=${thread._id}`);
+        const res = await req.get(`/api/replies/${boardId}?thread_id=${thread._id}`);
         thread = res.body;
 
         assert.isDefined(thread._id);

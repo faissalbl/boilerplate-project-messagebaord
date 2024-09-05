@@ -25,13 +25,7 @@ module.exports = function (app) {
         })
         .get(async (req, res) => {
             const board = req.params.board;
-            const threadId = req.query.thread_id;
-            let result;
-            if (threadId !== undefined) {
-                result = await getThread(threadId);
-            } else {
-                result = await getRecentThreadsAndReplies(board);
-            }
+            let result = await getRecentThreadsAndReplies(board);
             res.json(result);
         })
         .delete(async (req, res) => {
@@ -55,6 +49,12 @@ module.exports = function (app) {
         });
       
     app.route('/api/replies/:board')
+        .get(async (req, res) => {
+            const board = req.params.board;
+            const threadId = req.query.thread_id;
+            let result = await getThread(threadId);
+            res.json(result);
+        })
         .post(async (req, res) => {
             const { thread_id: threadId, text, delete_password: deletePassword } = req.body;
             const reply = await createReply(threadId, text, deletePassword);
